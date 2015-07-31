@@ -22,9 +22,15 @@ This one is the first project of my very beginning CS class.
 2. SHORTCUT FOR BUTTONS:
 
 Start                : press Enter
+
 Refresh              : press F5
+
 Help                 : press F1
+
 Show ( definition)   : press Spacebar
+
 Next                 : press 1
+
 Repeat               : press 2
+
 Back (to setting)    : press Backspace
