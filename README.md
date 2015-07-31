@@ -1,3 +1,5 @@
 # Flashcard
 Flashcard project using FLTK for GUI. 
-C++/FLTK code. Build with VS2013 (project file included). Read help.txt for more info about the app
+Build with VS2013 (project file included). 
+
+This one is the first project of my very beginning CS class.
