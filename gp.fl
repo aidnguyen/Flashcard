@@ -1,0 +1,607 @@
+# data file for the Fltk User Interface Designer (fluid)
+version 1.0303 
+header_name {.h} 
+code_name {.cxx}
+decl {\#include <FL/Fl_PNG_Image.H>} {private local
+} 
+
+decl {\#include <FL/Fl_Box.H>} {public local
+} 
+
+decl {\#include <FL/Fl_Double_Window.H>} {public local
+} 
+
+decl {\#include <FL/Fl_Button.H>} {public local
+} 
+
+decl {\#include <FL/fl_draw.H>} {public local
+} 
+
+decl {\#include <fstream>} {public local
+} 
+
+decl {\#include <string>} {public local
+} 
+
+decl {\#include <vector>} {private local
+} 
+
+decl {\#include <cstdlib>} {public local
+} 
+
+decl {\#include <ctime>} {public local
+} 
+
+decl {\#include <iostream>} {private local
+} 
+
+decl {using namespace std;} {public local
+} 
+
+comment {{\\tableofcontents\\section{Specification}
+Our project is a software to help users learn vocabulary the same
+way like using flashcards.
+\\\\
+The interface of the software will be a window in which contains a 
+list of options to let users choose which option they want to use.
+\\\\
+The list of options may include :
+\\begin{alltt}
+  - Choose how to show up the vocabulary in the list (consequently
+   or randomly) 
+  - How to show up the word needed to repeat ( by word or by time).
+    If there are some options to choose the number of words or the
+    amount of time.
+  - Users can edit the list of vocabulary right away by click on 
+    the pencil image
+\\end{alltt}
+\\\\
+ }} {in_source in_header
+} 
+
+comment {{\\clearpage\\section{Analysis}
+\\begin{itemize}
+\\item Input: the lists of word and their definition are loaded into 2 files:
+      word.txt and definition.txt. The word needs to be type in the form:
+      \\\\ 
+             01 word1
+      \\\\
+             02 word2
+      \\\\
+      and the same form for definition.
+\\\\             
+\\item Output: The words and their definitions loaded into the label of two 
+      boxes in Panel window. Users can click Next if they already know the
+      word, or click repeat to show up the word after a specific amount of
+      time or after a specific number of word passed (users will choose this
+      at Setting window).
+\\end{itemize}
+}} {in_source in_header
+} 
+
+comment {{\\clearpage\\section{Design}
+\\begin{alltt}
+ - Create 2 windows: Setting and Panel. Setting window is like the first
+   picture and Panel is like the other ones.
+\\\\
+ - Create radio buttons for the choices of "Show words" and 
+   how to "Repeat unknown words". Also use Fl_Choice to put in the numbers
+   of words and the amount of time that let users be able to choose.
+\\\\ 
+ - Create the button with a image (pencil) to let users be able to edit the
+   list of vocabulary when they click on it. Use function 
+   \\[system("editor <filename>.txt &")\\]
+\\\\
+ - Create 2 file notepad to store a list of vocabulary and a list of
+   definition in the same order ( word.txt and definition.txt)
+\\\\
+ - To load the list of vocabulary and list of definition, create a function
+   void load_file(string filename) using ifstream. Use while loop to read 
+   each line and store these vocabularies into wordvector and definitions 
+   into defvector by using <vectorname>.push_back() member function.
+   Also create load_num function (using ifstream,too) to return the number
+   of vocabulary ( it will be N).
+\\\\
+ - Create random(int a, int b) function with return the random value by 
+   using \\[ rand() \\% (b - a + 1) + a \\] to show random order of words in
+   the list. So, when we call this function, it will be random(0,N).
+\\\\
+ - Create the struct {int wstep, int tstep, int mindex} to save the state 
+   of word needed to repeat when user click on repeat button.
+\\\\
+ - Create the function void show_repeat() make the words needed to repeat
+   show up after N_repeatword or after N_repeattime when users click next
+   button ( N_repeatword and N_repeattime depend on what users choose at
+   Setting window).
+   At first, wstep = N_repeatword or tstep = N_repeattime. By click the 
+   next button, wstep and tstep start to countdown to 0. Use if function
+   to check whether wstep or tstep == 0 to show up the words.
+   For the word countdown, just use some logic algorithm like decrement.
+   For the time countdown, create count_time(void*) and use 
+   \\[Fl:add_timeout(1, count_time)\\] and \\[Fl::repeat_timeout(1,count_time)\\]
+    to count the time every second.
+\\\\
+ - Create the function next_word(int i) to show how to show up the next word
+\\end{alltt}
+}} {in_source in_header
+} 
+
+comment {{\\clearpage\\section{Implementation}}} {in_source in_header
+} 
+
+decl {int N; //the number of vocabularies in the list} {private local
+} 
+
+decl {int N_repeatword; // number of words needed to be pass to show up the repeat word} {private local
+} 
+
+decl {int N_repeattime; // amount of time needed to be pass to show up the repeat word} {private local
+} 
+
+decl {int countWord = 0;} {private local
+} 
+
+decl {int cur_word = 0;} {private local
+} 
+
+decl {int repeat_order = 0;} {private local
+} 
+
+decl {vector<string> wordvector;} {private local
+} 
+
+decl {vector<string> defvector;} {private local
+} 
+
+decl {struct repeatword {int wstep; int tstep; int mindex;};} {private global
+} 
+
+decl {vector<repeatword> repeat_word;} {private local
+} 
+
+class Draw {open : {public Fl_Double_Window}
+} {
+  Function {Draw(int x, int y, int w, int h) : Fl_Double_Window(x,y,w,h) {}} {open
+  } {}
+  Function {draw()} {open return_type void
+  } {
+    code {Fl_Double_Window::draw();} {}
+    code {//draw two lines in Panel Window to seperate parts
+fl_color(FL_WHITE);
+int x1;
+int x2;
+int y1;
+int y2;
+// line 1 between word and definition
+x1 = Panel->w()/5; x2 = 4*Panel->w()/5;
+y1 = vocab->y() + vocab->h(); y2=y1;	
+fl_line(x1,y1,x2,y2);
+// line 2 between definition and buttons
+y1 = def->y() + def->h();  y2 = y1;
+fl_line(x1,y1,x2,y2);} {}
+  }
+} 
+
+class HelpDraw {open : {public Fl_Double_Window}
+} {
+  Function {HelpDraw(int x, int y, int w, int h) : Fl_Double_Window(x,y,w,h) {}} {open
+  } {}
+  Function {draw()} {open return_type void
+  } {
+    code {Fl_Double_Window::draw();} {}
+    code {fl_color(FL_BLACK);
+fl_font(FL_HELVETICA,14);
+ifstream ifs("help.txt");
+string line;
+int scale = 0;
+while(getline(ifs, line))
+{
+  scale += 20;
+  fl_draw(line.c_str(), 20, scale);
+}
+ifs.close();} {}
+  }
+} 
+
+Function {load_num(string filename)} {open return_type int
+} {
+  code {// get the total number of vocabularies that are in "word.txt"
+ifstream ifs(filename.c_str());
+string line;
+int num;
+while(getline(ifs, line))
+{
+  string order = line.substr(0,2);
+  num = atoi(order.c_str());
+}
+ifs.close();
+return num;} {}
+} 
+
+Function {load_file(string filename)} {open return_type void
+} {
+  code {// load vocabularies and their definitions into wordvector and defvector
+ifstream ifs(filename.c_str());
+string line;
+while(getline(ifs, line))
+{
+  string str = line.substr(3);
+  if( filename == "word.txt" )
+   wordvector.push_back(str);
+  else
+   defvector.push_back(str); 
+}
+ifs.close();} {}
+} 
+
+Function {load_repeat_value()} {open return_type void
+} {
+  code {if(w->value(1)) {N_repeatword = 3;}
+else if(w->value(0)) {N_repeatword = 5;}
+if(t->value(1)) {N_repeattime = 10;}
+else if(t->value(0)) {N_repeattime = 30;}} {}
+} 
+
+Function {random(int a,int b)} {open return_type int
+} {
+  code {// generate random number
+srand((unsigned int)time(0));
+return rand() % (b - a + 1) + a;} {}
+} 
+
+Function {show_repeat()} {open return_type void
+} {
+  code {if(repeat_order > 0)
+{
+  if (wchoice->value())
+  {
+    for(unsigned int i=0; i < repeat_word.size(); i++) 
+    {repeat_word[i].wstep -= 1;
+    
+    cout << "Index " << i << " - Word " << 
+             wordvector[repeat_word[i].mindex] <<
+              " - Step left" << repeat_word[i].wstep << endl;}
+    
+    if(repeat_word[0].wstep == 0)
+    {
+      cur_word = repeat_word[0].mindex;
+      
+      cout << "--- Now repeat word = " << 
+              wordvector[repeat_word[0].mindex] << endl;
+      
+      vocab->label(wordvector[repeat_word[0].mindex].c_str());
+      def->label(defvector[repeat_word[0].mindex].c_str());
+      
+      repeat_word.erase(repeat_word.begin());
+      repeat_order--;
+      
+      if(c->value()) {countWord--;}
+    }
+  }
+  else if (tchoice->value())
+  {
+    if(repeat_word[0].tstep == 0)
+    { 
+      cur_word = repeat_word[0].mindex;
+      
+      cout << "--- Now repeat word = " << 
+              wordvector[repeat_word[0].mindex] << endl;
+      
+      vocab->label(wordvector[repeat_word[0].mindex].c_str());
+      def->label(defvector[repeat_word[0].mindex].c_str());
+      
+      repeat_word.erase(repeat_word.begin());
+      
+      for(unsigned int i=0; i < repeat_word.size(); i++) 
+        {repeat_word[i].tstep = N_repeattime;}
+      
+      repeat_order--;
+      
+      if(c->value()) {countWord--;}
+      // start to count time again when the first element in the repeat_vector removed
+      Fl::add_timeout(1.0, count_time);
+    }
+  }
+}} {}
+} 
+
+Function {next_word(int i)} {open return_type void
+} {
+  code {// how to show up the next vocabulary
+if(c->value())
+{
+  vocab->label(wordvector[i].c_str());
+  def->label(defvector[i].c_str());
+}
+else if(r->value())
+{
+  i = random(0,N-1);
+  vocab->label(wordvector[i].c_str());
+  def->label(defvector[i].c_str());
+}
+cur_word = i;
+show->show();
+def->hide();
+nextWord->hide();
+repeat->hide();
+back->hide();
+// Call the show_repeat() function to check if there is any words needed to repeat
+show_repeat();} {}
+} 
+
+Function {choose_something()} {open return_type void
+} {
+  code {// show errors message when users forget to choose any options
+if(!c->value() && !r->value() && !tchoice->value() && !wchoice->value())
+{
+error1->show();
+}
+if(!c->value() && !r->value() && (tchoice->value() || wchoice->value()))
+{
+error2->show();
+}
+if((c->value() || r->value()) && !tchoice->value() && !wchoice->value())
+{
+error3->show();
+}
+if((c->value() || r->value()) && (tchoice->value() || wchoice->value()))
+{
+Panel->show();
+Setting->hide();
+}} {}
+} 
+
+Function {count_time(void*)} {open
+} {
+  code {if( repeat_word[0].tstep <= 0 ) // After N_repeattime seconds, turn timer off
+{Fl::remove_timeout(count_time);}
+else
+{
+  repeat_word[0].tstep -= 1;
+  cout << repeat_word[0].tstep << endl;
+  Fl::repeat_timeout(1.0, count_time);
+}} {}
+} 
+
+Function {} {open
+} {
+  code {// load vocabularies, definition and the number of vocabularies
+load_file("word.txt");
+load_file("definition.txt");
+N = load_num("word.txt");
+cout << N << endl;
+for(int i=0;i<N;i++){cout << wordvector[i] << ": " << defvector[i] << endl;}} {}
+  Fl_Window error1 {
+    label Error
+    xywh {211 442 310 90} type Double hide
+  } {
+    Fl_Box {} {
+      label {Choose something to make program work !}
+      xywh {65 24 185 11}
+    }
+    Fl_Return_Button {} {
+      label OK
+      callback {error1->hide();}
+      xywh {120 50 70 25}
+    }
+  }
+  Fl_Window error2 {
+    label Error
+    xywh {221 452 310 90} type Double hide
+  } {
+    Fl_Box {} {
+      label {Choose how to show up vocabulary !}
+      xywh {65 19 185 11}
+    }
+    Fl_Return_Button {} {
+      label OK
+      callback {error2->hide();}
+      xywh {120 50 70 25}
+    }
+  }
+  Fl_Window error3 {
+    label Error
+    xywh {231 462 310 90} type Double hide
+  } {
+    Fl_Box {} {
+      label {Choose how to repeat unknown words !}
+      xywh {65 24 185 11}
+    }
+    Fl_Return_Button {} {
+      label OK
+      callback {error3->hide();}
+      xywh {120 50 70 25}
+    }
+  }
+  Fl_Window info {open
+    xywh {23 176 465 500} type Double hide
+    class HelpDraw
+  } {
+    Fl_Return_Button {} {
+      label Back
+      callback {info->hide();}
+      xywh {375 455 67 30}
+    }
+  }
+  Fl_Window Panel {open
+    xywh {167 251 328 343} type Double hide
+    class Draw
+  } {
+    Fl_Box background {
+      xywh {0 0 344 359}
+      code0 {o->image (new Fl_PNG_Image("buttons/theme.png"));}
+    }
+    Fl_Box vocab {
+      xywh {70 29 220 51} labelcolor 7
+    }
+    Fl_Button show {
+      label {Show definition}
+      callback {def->show();
+nextWord->show();
+repeat->show();
+back->show();
+show->hide();
+show->clear_visible_focus();}
+      xywh {120 270 100 70} box NO_BOX labelcolor 48
+      code0 {o->image (new Fl_PNG_Image("show.png"));}
+      code1 {o->shortcut(32); // shortcut : space bar}
+    }
+    Fl_Box def {
+      xywh {45 102 260 133} labelcolor 7 hide
+    }
+    Fl_Button nextWord {
+      label Next
+      callback {repeat->activate();
+if(c->value()) 
+{ 
+  countWord++;
+  if(countWord >= N) 
+  { cout << "Run out of words. Start the words over automatically !" << endl;
+  countWord = 0;}
+}
+next_word(countWord);}
+      xywh {30 270 50 60} box NO_BOX labelcolor 48 hide
+      code0 {o->image (new Fl_PNG_Image("buttons/next.png"));}
+      code1 {o->shortcut(49); // shortcut : press key "1"}
+    }
+    Fl_Button repeat {
+      label Repeat
+      callback {repeat->deactivate(); // avoid clicking repeat a word two times
+repeat_order++;
+
+repeatword abc;
+abc.wstep = N_repeatword;
+abc.tstep = N_repeattime;
+abc.mindex = cur_word;
+repeat_word.push_back(abc);
+cout << "number of words to repeat: " << repeat_order << endl;
+// start counting the time when users choose repeat 
+//  after a specific amount of time
+if(tchoice->value() && 
+   repeat_word[0].tstep == N_repeattime)
+{Fl::add_timeout(1.0, count_time);}
+for(unsigned int i=0; i < repeat_word.size(); i++)}
+      xywh {140 270 50 60} box NO_BOX labelcolor 48 hide
+      code0 {o->image (new Fl_PNG_Image("buttons/repeat.png"));}
+      code1 {o->shortcut(50); // shortcut: press key "2"}
+    }
+    Fl_Button back {
+      label Setting
+      callback {Setting->show();
+Panel->hide();
+start->label("Resume");
+if(tchoice->value())
+{Fl::remove_timeout(count_time);}} selected
+      xywh {255 270 50 60} box NO_BOX labelcolor 48 hide
+      code0 {o->image (new Fl_PNG_Image("buttons/gear.png"));}
+      code1 {o->shortcut(FL_BackSpace); // shortcut: press key "BackSpace"}
+    }
+  }
+  Fl_Window Setting {
+    label Setting open
+    xywh {114 342 405 255} type Double hide
+  } {
+    Fl_Group option1 {open
+      xywh {18 21 345 25}
+    } {
+      Fl_Round_Button c {
+        label consequently
+        xywh {143 21 115 20} type Radio down_box ROUND_DOWN_BOX
+        code0 {o->shortcut(99); // shortcut: key "c"}
+      }
+      Fl_Round_Button r {
+        label randomly
+        xywh {273 21 90 25} type Radio down_box ROUND_DOWN_BOX
+        code0 {r->shortcut(114); // shortcut: key "r"}
+      }
+      Fl_Box {} {
+        label {Show words}
+        xywh {18 21 85 21}
+      }
+    }
+    Fl_Group button {open
+      xywh {35 180 265 60}
+    } {
+      Fl_Button start {
+        label Start
+        callback {choose_something();
+if(c->value())
+{
+  vocab->label(wordvector[countWord].c_str());
+  def->label(defvector[countWord].c_str());
+}
+else if(r->value()) {next_word(countWord);}
+repeat_word.clear();
+repeat_order = 0;
+cur_word = 0;
+load_repeat_value();}
+        xywh {35 180 50 60} box NO_BOX
+        code0 {o->image (new Fl_PNG_Image("buttons/play.png"));}
+        code1 {o->shortcut(FL_Enter); // shortcut : press "Enter"}
+      }
+      Fl_Button Refresh {
+        label Refresh
+        callback {wordvector.clear();
+defvector.clear();
+load_file("word.txt");
+load_file("definition.txt");
+N = load_num("word.txt");
+cout << N << endl;
+for(int i=0;i<N;i++){cout << wordvector[i] << ": " << defvector[i] << endl;}}
+        xywh {145 180 50 60} box NO_BOX
+        code0 {o->image (new Fl_PNG_Image("buttons/refresh.png"));}
+        code1 {o->shortcut(FL_F+5); // shortcut : press "F5"}
+      }
+      Fl_Button help {
+        label Help
+        callback {info->show();}
+        xywh {250 180 50 60} box NO_BOX
+        code0 {o->image (new Fl_PNG_Image("buttons/help.png"));}
+        code1 {o->shortcut(FL_F+1); // shortcut: press "F1"}
+      }
+    }
+    Fl_Button Pencil {
+      callback {system("editor word.txt &");
+system("editor definition.txt &");}
+      xywh {315 50 70 190} box NO_BOX
+      code0 {o->image(new Fl_PNG_Image("buttons/pencil.png"));}
+    }
+    Fl_Group {} {
+      label {Repeat unknown words} open
+      xywh {20 83 235 65} align 5
+    } {
+      Fl_Choice t {
+        label { after (in second)} open
+        xywh {175 88 80 25} down_box BORDER_BOX
+        code0 {t->add("10s");}
+        code1 {t->add("30s");}
+        code2 {t->value(0);}
+      } {}
+      Fl_Choice w {
+        label { or after (in words)   } open
+        xywh {175 123 80 25} down_box BORDER_BOX
+        code0 {w->add("3 words");}
+        code1 {w->add("5 words");}
+        code2 {w->value(0);}
+      } {}
+      Fl_Round_Button tchoice {
+        xywh {20 90 15 20} type Radio down_box ROUND_DOWN_BOX
+        code0 {o->shortcut(116); // shortcut: key "t"}
+      }
+      Fl_Round_Button wchoice {
+        xywh {20 123 15 20} type Radio down_box ROUND_DOWN_BOX
+        code0 {o->shortcut(119); // shortcut: key "w"}
+      }
+    }
+  }
+} 
+
+comment {{\\clearpage\\section{Test}
+This is how the program looks like:
+\\includegraphics[scale=0.6]{setting.png}
+\\\\
+\\includegraphics[scale=0.6]{panela.png}
+\\\\
+\\includegraphics[scale=0.6]{panelb.png}
+}} {in_source in_header
+} 
