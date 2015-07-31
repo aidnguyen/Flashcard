@@ -7,7 +7,7 @@ This one is the first project of my very beginning CS class.
 *****   Flashcard software v.1.0.   *****
 ===  Developed by CS102 students  ===
 
-1. How to use:
+1. HOW TO USE:
 
 - Click on the pencil image to see/edit the words list and their
   definitions as well. If you want to edit the lists, make sure to
@@ -19,7 +19,7 @@ This one is the first project of my very beginning CS class.
        "next" 3 time, the unknown word that you clicked "repeat" 
        before will show up.
 
-2. Shortcut for buttons:
+2. SHORTCUT FOR BUTTONS:
 
 Start                : press Enter
 Refresh              : press F5
